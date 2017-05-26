@@ -13,14 +13,13 @@
 
   <h1>Realtime communication with WebRTC</h1>
 
-  <textarea id="dataChannelSend" disabled
-    placeholder="Press Start, enter some text, then press Send."></textarea>
-  <textarea id="dataChannelReceive" disabled></textarea>
+  <video id="localVideo" autoplay></video>
+  <video id="remoteVideo" autoplay></video>
 
-  <div id="buttons">
+  <div>
     <button id="startButton">Start</button>
-    <button id="sendButton">Send</button>
-    <button id="closeButton">Stop</button>
+    <button id="callButton">Call</button>
+    <button id="hangupButton">Hang Up</button>
   </div>
 
   <script src="js/lib/adapter.js"></script>
