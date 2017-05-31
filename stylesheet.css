@@ -1,13 +1,13 @@
 html, body{
-  height:100%;
+  height:100vh;
 }
 .upper_half{
-  height:50%;
-  line-height:500%;
+  height:50vh;
+  line-height:50vh;
 }
 
 .lower_half{
-  height:50%;
+  height:50vh;
 }
 
 h1 {
