@@ -131,9 +131,9 @@
       font: '16px Calibri'
     };
 
-    function FS_Plot(canvas, teams) {
-      var ew, graphics, i, j, k, l, len, len1, len2, len3, len4, m, mesh, n, o, options, point0, ref, ref1, ref10, ref11, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9, results, style, team, y_label;
-      this.teams = teams;
+    function FS_Plot(canvas, teams1) {
+      var count, ew, graphics, i, j, k, l, len, len1, len2, len3, len4, m, mesh, n, o, options, point0, ref, ref1, ref10, ref11, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9, results, style, team, y_label;
+      this.teams = teams1;
       this.xTicks = (function() {
         var j, ref, results;
         results = [];
@@ -156,6 +156,7 @@
         this.teamColors[team] = FS_Plot.colors[i % FS_Plot.colors.length];
       }
       this.showPoints = false;
+      this.showLegend = true;
       this.stageTeamPoints = {};
       point0 = new PIXI.Point(0.5, 0.5);
       this.points = {};
@@ -164,6 +165,7 @@
         team = ref3[k];
         this.points[team] = [];
         this.stageTeamPoints[team] = new PIXI.Container();
+        count = 0;
         ref4 = FS_Data.epiweeks;
         for (l = 0, len2 = ref4.length; l < len2; l++) {
           ew = ref4[l];
@@ -174,6 +176,7 @@
           graphics.endFill();
           this.stageTeamPoints[team].addChild(graphics);
           this.points[team].push(new Point(graphics, point0));
+          count = count + 1;
         }
       }
       this.lineOrder = (function() {
@@ -258,7 +261,7 @@
     };
 
     FS_Plot.prototype.render = function(renderTime) {
-      var alpha, animationProgress, axes, b, bar, color, dataMax, dataMin, direction, h, i, interval, j, k, l, len, len1, len2, len3, len4, len5, line, lineWidth, m, n, o, overlay, p, plotBox, pts, q, r, range, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref15, ref16, ref17, ref18, ref19, ref2, ref20, ref21, ref22, ref23, ref24, ref3, ref4, ref5, ref6, ref7, ref8, ref9, s, stageLines, stageMain, stagePlot, str, t, target, team, teamIndex, tickLabel, tickLabels, u, value, w, weight, x, x0, x1, xBox, y, y0, y1, yBox;
+      var alpha, animationProgress, axes, b, bar, color, dataMax, dataMin, h, i, j, k, l, len, len1, len2, len3, len4, len5, line, lineWidth, m, n, o, overlay, p, plotBox, pts, q, r, range, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref15, ref16, ref17, ref18, ref19, ref2, ref20, ref21, ref22, ref3, ref4, ref5, ref6, ref7, ref8, ref9, s, stageLines, stageMain, stagePlot, str, t, team, teamIndex, tickLabel, tickLabels, u, value, w, weight, x, x0, x1, xBox, y, y0, y1, yBox;
       this.renderRequested = false;
       animationProgress = (getTime() - this.animationStartTime) / FS_Plot.animationDuration;
       if (animationProgress < 1) {
@@ -355,21 +358,16 @@
       weight = Point.ease(animationProgress);
       dataMin = Point.blend(this.lastDataMin, this.dataMin, weight);
       dataMax = Point.blend(this.lastDataMax, this.dataMax, weight);
-      interval = 1;
+      this.interval = 1;
       range = dataMax - dataMin;
-      while (interval >= 0.01 && range / interval < 6) {
-        interval *= 0.5;
+      while (this.interval >= 0.01 && range / this.interval < 6) {
+        this.interval *= 0.5;
       }
-      while (interval < 100 && range / interval >= 12) {
-        interval *= 2;
+      while (this.interval < 100 && range / this.interval >= 12) {
+        this.interval *= 2;
       }
-      if (Math.abs(dataMax) > Math.abs(dataMin)) {
-        ref9 = [+1, Math.abs(dataMax)], direction = ref9[0], target = ref9[1];
-      } else {
-        ref10 = [-1, Math.abs(dataMin)], direction = ref10[0], target = ref10[1];
-      }
-      for (i = q = 0, ref11 = range / interval; 0 <= ref11 ? q <= ref11 : q >= ref11; i = 0 <= ref11 ? ++q : --q) {
-        value = direction * i * interval;
+      for (i = q = 0, ref9 = range / this.interval; 0 <= ref9 ? q <= ref9 : q >= ref9; i = 0 <= ref9 ? ++q : --q) {
+        value = this.dataMin + i * this.interval;
         x = plotBox.x;
         y = plotBox.y + this.getY(value, animationProgress) * plotBox.h;
         str = value.toFixed(2);
@@ -387,8 +385,8 @@
         axes.lineTo(x - 10, y);
       }
       if (this.mode === 'line') {
-        for (i = r = 0, ref12 = FS_Data.epiweeks.length; 0 <= ref12 ? r < ref12 : r > ref12; i = 0 <= ref12 ? ++r : --r) {
-          ref13 = [xBox.x + this.xTicks[i] * xBox.w, xBox.y], x = ref13[0], y = ref13[1];
+        for (i = r = 0, ref10 = FS_Data.epiweeks.length; 0 <= ref10 ? r < ref10 : r > ref10; i = 0 <= ref10 ? ++r : --r) {
+          ref11 = [xBox.x + this.xTicks[i] * xBox.w, xBox.y], x = ref11[0], y = ref11[1];
           if (i % 3 === 0) {
             lineWidth = 3;
             tickLabel = this.axisTicks[this.mode].x[i];
@@ -400,44 +398,44 @@
           axes.lineStyle(1, 0x000000, 0.1);
           axes.moveTo(x, y0);
           axes.lineTo(x, y1);
-          if ((ref14 = axes.currentPath) != null ? ref14.shape : void 0) {
+          if ((ref12 = axes.currentPath) != null ? ref12.shape : void 0) {
             axes.currentPath.shape.closed = false;
           }
           axes.lineStyle(lineWidth, 0x000000, 1);
           axes.moveTo(x, y);
           axes.lineTo(x, y + 10);
-          if ((ref15 = axes.currentPath) != null ? ref15.shape : void 0) {
+          if ((ref13 = axes.currentPath) != null ? ref13.shape : void 0) {
             axes.currentPath.shape.closed = false;
           }
         }
       } else {
-        ref16 = enumerate(this.teams);
-        for (s = 0, len4 = ref16.length; s < len4; s++) {
-          ref17 = ref16[s], i = ref17[0], team = ref17[1];
-          ref18 = [xBox.x + (i + 0.5) / this.teams.length * xBox.w, xBox.y], x = ref18[0], y = ref18[1];
+        ref14 = enumerate(this.teams);
+        for (s = 0, len4 = ref14.length; s < len4; s++) {
+          ref15 = ref14[s], i = ref15[0], team = ref15[1];
+          ref16 = [xBox.x + (i + 0.5) / this.teams.length * xBox.w, xBox.y], x = ref16[0], y = ref16[1];
           tickLabel = this.axisTicks[this.mode].x[i];
           tickLabel.position.set(x, y + 20);
           tickLabels.addChild(tickLabel);
           axes.lineStyle(1, 0x000000, 0.1);
           axes.moveTo(x, y0);
           axes.lineTo(x, y1);
-          if ((ref19 = axes.currentPath) != null ? ref19.shape : void 0) {
+          if ((ref17 = axes.currentPath) != null ? ref17.shape : void 0) {
             axes.currentPath.shape.closed = false;
           }
           axes.lineStyle(3, 0x000000, 1);
           axes.moveTo(x, y);
           axes.lineTo(x, y + 10);
-          if ((ref20 = axes.currentPath) != null ? ref20.shape : void 0) {
+          if ((ref18 = axes.currentPath) != null ? ref18.shape : void 0) {
             axes.currentPath.shape.closed = false;
           }
         }
       }
       if (this.mode !== 'line' || this.lastMode !== 'line') {
-        ref21 = enumerate(this.teamBars);
-        for (u = 0, len5 = ref21.length; u < len5; u++) {
-          ref22 = ref21[u], i = ref22[0], bar = ref22[1];
-          ref23 = [xBox.x + (i + 0.5) / this.teams.length * xBox.w, plotBox.y], x = ref23[0], y = ref23[1];
-          ref24 = [0.9 / this.teams.length * plotBox.w, plotBox.h], w = ref24[0], h = ref24[1];
+        ref19 = enumerate(this.teamBars);
+        for (u = 0, len5 = ref19.length; u < len5; u++) {
+          ref20 = ref19[u], i = ref20[0], bar = ref20[1];
+          ref21 = [xBox.x + (i + 0.5) / this.teams.length * xBox.w, plotBox.y], x = ref21[0], y = ref21[1];
+          ref22 = [0.9 / this.teams.length * plotBox.w, plotBox.h], w = ref22[0], h = ref22[1];
           color = this.teamColors[this.teams[i]];
           p = animationProgress;
           b = bar.draw(p, this, color, x, y, w, h);
@@ -460,67 +458,180 @@
       stageMain.addChild(axes);
       stageMain.addChild(stagePlot);
       stageMain.addChild(overlay);
-      stageMain.addChild(this.legend);
+      if (this.showLegend) {
+        stageMain.addChild(this.legend);
+      }
       return this.renderer.render(stageMain);
     };
 
-    FS_Plot.prototype.update = function(teamValues) {
-      var animationProgress, center, i, j, k, l, left, len, len1, len2, len3, len4, m, max, min, n, o, padding, q, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9, right, sum, t, team, teamIndex, value, weekIndex, width, x, y;
+    FS_Plot.prototype.update = function(teamValues, type, teams, colors) {
+      var animationProgress, center, count, diff, dist, ew, graphics, i, i1, j, k, l, left, len, len1, len2, len3, len4, len5, len6, len7, len8, len9, m, max, mesh, min, n, o, padding, point0, q, r, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref15, ref16, ref17, ref18, ref19, ref2, ref20, ref21, ref22, ref23, ref24, ref25, ref26, ref27, ref28, ref3, ref4, ref5, ref6, ref7, ref8, ref9, results, right, s, style, sum, t, team, teamIndex, u, v, value, weekIndex, width, x, y, z;
+      if (type == null) {
+        type = 'normal';
+      }
+      this.teams = teams;
+      this.colors = colors;
       ref = [0, 0], min = ref[0], max = ref[1];
       this.teamAverages = {};
       this.teamStds = {};
-      ref1 = enumerate(this.teams);
+      this.teamBars = [];
+      ref1 = this.teams;
       for (j = 0, len = ref1.length; j < len; j++) {
-        ref2 = ref1[j], i = ref2[0], t = ref2[1];
+        team = ref1[j];
+        this.teamBars.push(new Bar());
+      }
+      ref2 = enumerate(this.teams);
+      for (k = 0, len1 = ref2.length; k < len1; k++) {
+        ref3 = ref2[k], i = ref3[0], t = ref3[1];
         sum = 0;
-        ref3 = teamValues[t];
-        for (k = 0, len1 = ref3.length; k < len1; k++) {
-          value = ref3[k];
+        ref4 = teamValues[t];
+        for (l = 0, len2 = ref4.length; l < len2; l++) {
+          value = ref4[l];
           min = Math.min(min, value);
           max = Math.max(max, value);
           sum += value;
         }
         this.teamAverages[t] = sum / teamValues[t].length;
         sum = 0;
-        ref4 = teamValues[t];
-        for (l = 0, len2 = ref4.length; l < len2; l++) {
-          value = ref4[l];
+        ref5 = teamValues[t];
+        for (m = 0, len3 = ref5.length; m < len3; m++) {
+          value = ref5[m];
           sum += Math.pow(value - this.teamAverages[t], 2);
         }
         this.teamStds[t] = Math.pow(sum / teamValues[t].length, 0.5);
         this.teamBars[i].setTarget(this.teamAverages[t], this.teamStds[t]);
       }
+      if (type === 'zoomIn') {
+        dist = this.dataMax - this.dataMin;
+        diff = dist / 8.0;
+        ref6 = [this.dataMin + diff, this.dataMax - diff], min = ref6[0], max = ref6[1];
+      }
+      if (type === 'zoomOut') {
+        dist = this.dataMax - this.dataMin;
+        diff = dist * 2.0 / 3.0;
+        ref7 = [this.dataMin - this.interval, this.dataMax + this.interval], min = ref7[0], max = ref7[1];
+      }
+      if (type === 'moveUp') {
+        dist = this.interval;
+        ref8 = [this.dataMin + dist, this.dataMax + dist], min = ref8[0], max = ref8[1];
+      }
+      if (type === 'moveDown') {
+        dist = this.interval;
+        ref9 = [this.dataMin - dist, this.dataMax - dist], min = ref9[0], max = ref9[1];
+      }
+      if (type === 'teamToggle') {
+        ref10 = [this.dataMin, this.dataMax], min = ref10[0], max = ref10[1];
+      }
+      if (type === 'legendToggle') {
+        this.showLegend = !this.showLegend;
+        ref11 = [this.dataMin, this.dataMax], min = ref11[0], max = ref11[1];
+      }
       padding = (max - min) * 0.05;
-      ref5 = [this.dataMin, this.dataMax], this.lastDataMin = ref5[0], this.lastDataMax = ref5[1];
-      ref6 = [this.axisMin, this.axisMax], this.lastAxisMin = ref6[0], this.lastAxisMax = ref6[1];
-      ref7 = [min, max], this.dataMin = ref7[0], this.dataMax = ref7[1];
-      ref8 = [min - padding, max + padding], this.axisMin = ref8[0], this.axisMax = ref8[1];
+      ref12 = [this.dataMin, this.dataMax], this.lastDataMin = ref12[0], this.lastDataMax = ref12[1];
+      ref13 = [this.axisMin, this.axisMax], this.lastAxisMin = ref13[0], this.lastAxisMax = ref13[1];
+      ref14 = [min, max], this.dataMin = ref14[0], this.dataMax = ref14[1];
+      ref15 = [min - padding, max + padding], this.axisMin = ref15[0], this.axisMax = ref15[1];
+      this.teamColors = {};
+      ref16 = enumerate(this.teams);
+      for (n = 0, len4 = ref16.length; n < len4; n++) {
+        ref17 = ref16[n], i = ref17[0], team = ref17[1];
+        this.teamColors[team] = this.colors[i % this.colors.length];
+      }
+      this.lineOrder = (function() {
+        results = [];
+        for (var o = 0, ref18 = this.teams.length; 0 <= ref18 ? o < ref18 : o > ref18; 0 <= ref18 ? o++ : o--){ results.push(o); }
+        return results;
+      }).apply(this);
+      this.stageTeamPoints = {};
+      point0 = new PIXI.Point(0.5, 0.5);
+      this.points = {};
+      ref19 = this.teams;
+      for (q = 0, len5 = ref19.length; q < len5; q++) {
+        team = ref19[q];
+        this.points[team] = [];
+        this.stageTeamPoints[team] = new PIXI.Container();
+        count = 0;
+        ref20 = FS_Data.epiweeks;
+        for (r = 0, len6 = ref20.length; r < len6; r++) {
+          ew = ref20[r];
+          graphics = new PIXI.Graphics();
+          graphics.beginFill(this.teamColors[team], 1);
+          graphics.lineStyle(2, 0x000000, 1);
+          graphics.drawCircle(0, 0, 4);
+          graphics.endFill();
+          if (teamValues[team][count] >= min) {
+            this.stageTeamPoints[team].addChild(graphics);
+          }
+          this.points[team].push(new Point(graphics, point0));
+          count = count + 1;
+        }
+      }
+      this.axisTicks = {
+        line: {
+          x: (function() {
+            var len7, ref21, results1, s;
+            ref21 = FS_Data.epiweeks;
+            results1 = [];
+            for (s = 0, len7 = ref21.length; s < len7; s++) {
+              ew = ref21[s];
+              results1.push(textMesh('' + ew, FS_Plot.tickStyle));
+            }
+            return results1;
+          })()
+        },
+        bar: {
+          x: (function() {
+            var len7, ref21, results1, s;
+            ref21 = this.teams;
+            results1 = [];
+            for (s = 0, len7 = ref21.length; s < len7; s++) {
+              team = ref21[s];
+              results1.push(textMesh(team, FS_Plot.tickStyle));
+            }
+            return results1;
+          }).call(this)
+        }
+      };
+      this.legend = new PIXI.Container();
+      ref21 = enumerate(this.teams);
+      for (s = 0, len7 = ref21.length; s < len7; s++) {
+        ref22 = ref21[s], i = ref22[0], team = ref22[1];
+        style = {
+          font: FS_Plot.tickStyle.font,
+          fill: this.teamColors[team]
+        };
+        mesh = textMesh(team, style);
+        mesh.position.set(mesh.width / 2, 16 * (i + 1));
+        this.legend.addChild(mesh);
+      }
       animationProgress = (getTime() - this.animationStartTime) / FS_Plot.animationDuration;
       if (this.mode === 'line') {
-        for (i = m = 0, ref9 = FS_Data.epiweeks.length; 0 <= ref9 ? m < ref9 : m > ref9; i = 0 <= ref9 ? ++m : --m) {
+        for (i = u = 0, ref23 = FS_Data.epiweeks.length; 0 <= ref23 ? u < ref23 : u > ref23; i = 0 <= ref23 ? ++u : --u) {
           x = this.xTicks[i];
-          ref10 = this.teams;
-          for (n = 0, len3 = ref10.length; n < len3; n++) {
-            t = ref10[n];
+          ref24 = this.teams;
+          for (v = 0, len8 = ref24.length; v < len8; v++) {
+            t = ref24[v];
             y = this.getY(teamValues[t][i]);
             this.points[t][i].setTarget(new PIXI.Point(x, y), animationProgress);
           }
         }
       } else {
-        ref11 = enumerate(this.teams);
-        for (o = 0, len4 = ref11.length; o < len4; o++) {
-          ref12 = ref11[o], teamIndex = ref12[0], team = ref12[1];
+        ref25 = enumerate(this.teams);
+        for (z = 0, len9 = ref25.length; z < len9; z++) {
+          ref26 = ref25[z], teamIndex = ref26[0], team = ref26[1];
           center = (teamIndex + 0.5) / this.teams.length;
           width = 0.8 / this.teams.length;
-          ref13 = [center - width / 2, center + width / 2], left = ref13[0], right = ref13[1];
-          for (weekIndex = q = 0, ref14 = FS_Data.epiweeks.length; 0 <= ref14 ? q < ref14 : q > ref14; weekIndex = 0 <= ref14 ? ++q : --q) {
+          ref27 = [center - width / 2, center + width / 2], left = ref27[0], right = ref27[1];
+          for (weekIndex = i1 = 0, ref28 = FS_Data.epiweeks.length; 0 <= ref28 ? i1 < ref28 : i1 > ref28; weekIndex = 0 <= ref28 ? ++i1 : --i1) {
             x = Point.blend(left, right, weekIndex / (FS_Data.epiweeks.length - 1));
             y = this.getY(teamValues[team][weekIndex]);
             this.points[team][weekIndex].setTarget(new PIXI.Point(x, y), animationProgress);
           }
         }
       }
-      this.animationStartTime = getTime();
+      if (type === 'normal') {
+        this.animationStartTime = getTime();
+      }
       return this.requestRender();
     };
 

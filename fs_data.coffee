@@ -142,7 +142,6 @@
 
   unpackValues = (data, values, targets) ->
     i = 0
-    console.log(values)
     for target in targets
       data[target] = {}
       for err in FS_Data.errors

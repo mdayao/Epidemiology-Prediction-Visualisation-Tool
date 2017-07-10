@@ -339,7 +339,6 @@
     unpackValues = function(data, values, targets) {
       var err, ew, j, len, results1, target;
       i = 0;
-      console.log(values);
       results1 = [];
       for (j = 0, len = targets.length; j < len; j++) {
         target = targets[j];

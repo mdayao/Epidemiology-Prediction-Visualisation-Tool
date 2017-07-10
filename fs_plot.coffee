@@ -79,12 +79,14 @@ class Bar
       @teamColors[team] = FS_Plot.colors[i % FS_Plot.colors.length]
     # point for each epiweek for each team
     @showPoints = false
+    @showLegend = true
     @stageTeamPoints = {}
     point0 = new PIXI.Point(0.5, 0.5)
     @points = {}
     for team in @teams
       @points[team] = []
       @stageTeamPoints[team] = new PIXI.Container()
+      count = 0
       for ew in FS_Data.epiweeks
         graphics = new PIXI.Graphics()
         graphics.beginFill(@teamColors[team], 1)
@@ -94,6 +96,7 @@ class Bar
         graphics.endFill()
         @stageTeamPoints[team].addChild(graphics)
         @points[team].push(new Point(graphics, point0))
+        count = count + 1
     # order in which lines are drawn
     @lineOrder = [0...@teams.length]
     # bar for each team
@@ -229,18 +232,14 @@ class Bar
     weight = Point.ease(animationProgress)
     dataMin = Point.blend(@lastDataMin, @dataMin, weight)
     dataMax = Point.blend(@lastDataMax, @dataMax, weight)
-    interval = 1
+    @interval = 1
     range = dataMax - dataMin
-    while interval >= 0.01 and range / interval < 6
-      interval *= 0.5
-    while interval < 100 and range / interval >= 12
-      interval *= 2
-    if Math.abs(dataMax) > Math.abs(dataMin)
-      [direction, target] = [+1, Math.abs(dataMax)]
-    else
-      [direction, target] = [-1, Math.abs(dataMin)]
-    for i in [0..(range / interval)]
-      value = direction * i * interval
+    while @interval >= 0.01 and range / @interval < 6
+      @interval *= 0.5
+    while @interval < 100 and range / @interval >= 12
+      @interval *= 2
+    for i in [0..(range / @interval)]
+      value = @dataMin + i * @interval
       x = plotBox.x
       y = plotBox.y + @getY(value, animationProgress) * plotBox.h
       str = value.toFixed(2)
@@ -322,15 +321,22 @@ class Bar
     stageMain.addChild(axes)
     stageMain.addChild(stagePlot)
     stageMain.addChild(overlay)
-    stageMain.addChild(@legend)
+    if (@showLegend)
+      stageMain.addChild(@legend)
     # draw everything
     @renderer.render(stageMain)
 
-  update: (teamValues) ->
+  update: (teamValues, type='normal', teams, colors) ->
+    @teams = teams
+    @colors = colors
     # auto-adjust plot bounds
     [min, max] = [0, 0]
     @teamAverages = {}
     @teamStds = {}
+    # bar for each team
+    @teamBars = []
+    for team in @teams
+      @teamBars.push(new Bar())
     for [i, t] in enumerate(@teams)
       sum = 0
       for value in teamValues[t]
@@ -343,11 +349,68 @@ class Bar
         sum += (value - @teamAverages[t]) ** 2
       @teamStds[t] = (sum / teamValues[t].length) ** 0.5
       @teamBars[i].setTarget(@teamAverages[t], @teamStds[t])
+    if (type == 'zoomIn')
+      dist = @dataMax - @dataMin
+      diff = dist / 8.0
+      [min, max] = [@dataMin + diff, @dataMax - diff]
+    if (type == 'zoomOut')
+      dist = @dataMax - @dataMin
+      diff = dist * 2.0 / 3.0
+      [min, max] = [@dataMin - @interval, @dataMax + @interval]
+    if (type == 'moveUp')
+      dist = @interval
+      [min, max] = [@dataMin + dist, @dataMax + dist]
+    if (type == 'moveDown')
+      dist = @interval
+      [min, max] = [@dataMin - dist, @dataMax - dist]
+    if (type == 'teamToggle')
+      [min, max] = [@dataMin, @dataMax]
+    if (type == 'legendToggle')
+      @showLegend = !@showLegend
+      [min, max] = [@dataMin, @dataMax]
     padding = (max - min) * 0.05
     [@lastDataMin, @lastDataMax] = [@dataMin, @dataMax]
     [@lastAxisMin, @lastAxisMax] = [@axisMin, @axisMax]
     [@dataMin, @dataMax] = [min, max]
     [@axisMin, @axisMax] = [min - padding, max + padding]
+    # coloring
+    @teamColors = {}
+    for [i, team] in enumerate(@teams)
+      @teamColors[team] = @colors[i % @colors.length]
+    # order in which lines are drawn
+    @lineOrder = [0...@teams.length]
+    @stageTeamPoints = {}
+    point0 = new PIXI.Point(0.5, 0.5)
+    @points = {}
+    for team in @teams
+      @points[team] = []
+      @stageTeamPoints[team] = new PIXI.Container()
+      count = 0
+      for ew in FS_Data.epiweeks
+        graphics = new PIXI.Graphics()
+        graphics.beginFill(@teamColors[team], 1)
+        graphics.lineStyle(2, 0x000000, 1)
+        graphics.drawCircle(0, 0, 4)
+        #graphics.drawRect(-4, -4, 8, 8)
+        graphics.endFill()
+        if teamValues[team][count] >= min
+          @stageTeamPoints[team].addChild(graphics)
+        @points[team].push(new Point(graphics, point0))
+        count = count + 1
+    @axisTicks =
+      line:
+        x: (textMesh('' + ew, FS_Plot.tickStyle) for ew in FS_Data.epiweeks)
+      bar:
+        x: (textMesh(team, FS_Plot.tickStyle) for team in @teams)
+    # legend
+    @legend = new PIXI.Container()
+    for [i, team] in enumerate(@teams)
+      style =
+        font: FS_Plot.tickStyle.font
+        fill: @teamColors[team]
+      mesh = textMesh(team, style)
+      mesh.position.set(mesh.width / 2, 16 * (i + 1))
+      @legend.addChild(mesh)
     # set point targets
     animationProgress = (getTime() - @animationStartTime) / FS_Plot.animationDuration
     if @mode == 'line'
@@ -365,8 +428,9 @@ class Bar
           x = Point.blend(left, right, weekIndex / (FS_Data.epiweeks.length - 1))
           y = @getY(teamValues[team][weekIndex])
           @points[team][weekIndex].setTarget(new PIXI.Point(x, y), animationProgress)
-    # start the animation
-    @animationStartTime = getTime()
+    if (type == 'normal')
+      # start the animation
+      @animationStartTime = getTime()
     @requestRender()
 
   getY: (value, p=1) ->

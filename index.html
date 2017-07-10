@@ -21,6 +21,16 @@
       .full { width: 100%; height: 100%; }
       .centered { display: flex; justify-content: center; align-items: center; }
       .title { font-family: "Alegreya SC", "Rockwell Extra Bold", "Rockwell Bold", monospace; text-spacing: 1px; text-shadow: 0px 0px 10px #888; }
+      #row { padding-top:5px; padding-bottom:5px;}
+      #button_plotmenu {width:30px; height:30px; font-size:25px; background-color:transparent; border:none; outline:none; float:left;}
+      #legend {height: 300px; width : 140px; list-style: none; overflow-x: scroll; overflow-y: scroll; padding-left: 0px;float: left;}
+      #legend > li { padding-top: 3px; padding-bottom: 3px; max-width: 150px; white-space: nowrap; text-align: left;}
+      #colorbox { font-size: 13px; padding: 15px;}
+      #colorbox > div { padding : 3px; }
+      #colbar { width:90px;float:right }
+      #colpick { height: 20px; width : 20px; padding: 0px; border: none;}
+      #colset {list-style: none; padding: 0px;}
+      #colset > li { display : inline; }
     </style>
   </head>
   <body>
@@ -70,14 +80,39 @@
             <option value="combine">[by team]</option>
           </select></label>&nbsp;
         </div>
-        <div style="padding-top:4px;">
+        <div style="padding-top:4px;padding-bottom:4px;border-bottom:1px solid #888;">
           <input id="button_shake" type="button" value="Shake It Up"></input>&nbsp;|&nbsp;
           <label>Show Points: <input id="checkbox_points" type="checkbox"></input></label>&nbsp;|&nbsp;
-          <label>Overlay wILI: <input id="checkbox_wili" type="checkbox"></input></label>
+          <label>Overlay wILI: <input id="checkbox_wili" type="checkbox"></input></label>&nbsp;|&nbsp;
+          <label> Show Legend : <input id="checkbox_legend" type="checkbox" checked="checked"></input></label> 
         </div>
       </div>
-      <div class="centered" style="height:calc(100% - 64px);">
-        <canvas id="canvas" style="width:100%;height:100%;"></canvas>
+      
+      <div id="container" style="height:calc(100% - 64px)">
+        <input id="button_plotmenu" type="button"/>
+        <div id="plot_menu" style="height:100%;width:150px;float:left;padding-top:30px;">
+          <div id="row">
+            <label>Zoom: <input id="button_zoomin" type="button" value="&plus;"></input></label>&nbsp;|&nbsp;
+            <input id="button_zoomout" type="button" value="&minus;"></input>
+          </div>
+          <div id="row">
+            <label>Move: <input id="button_moveup" type="button" value="&uarr;"></input></label>&nbsp;|&nbsp;
+            <input id="button_movedown" type="button" value="&darr;"></input>
+          </div>
+          <div id="row">
+            <input id="button_rescale" type="button" value="rescale"/>
+          </div>
+          <div id="row">
+            <label> LEGEND </label>
+          </div>
+          <div style="height:300px">
+            <ul id="legend">
+            </ul>
+          </div>
+        </div>
+        <div style="height:100%;width:auto;overflow:hidden">
+          <canvas id="canvas" style="width:100%;height:100%;"></canvas>
+        </div>
       </div>
     </div>
     <script>
@@ -89,19 +124,39 @@
     var shakeButton = $('#button_shake');
     var pointsCheckbox = $('#checkbox_points');
     var wiliCheckbox = $('#checkbox_wili');
+    var legendCheckbox = $('#checkbox_legend')
+    var color_list = [0x4080c0, 0xc04080, 0xc08040, 0x40c080, 0x8040c0, 0x80c040];
+    var colors = [];
+    var exclude_teams = [];
     var teams = null;
     var data = null;
     var plot = null;
-    function update() {
+    var plot_menu = $('#plot_menu');
+    var plotmenu_button = $('#button_plotmenu');
+    var showPlotMenu = false;
+    var zoominButton = $('#button_zoomin');
+    var zoomoutButton = $('#button_zoomout');
+    var moveupButton = $('#button_moveup');
+    var movedownButton = $('#button_movedown');
+    var rescaleButton = $('#button_rescale');
+    var legend = $('#legend');
+
+    function update(input) {
       if(data === null) {
         return;
       }
       var values = FS_Data.update(data, parseInt($('#season_select').val()), error.val(), target.val(), region.val(), epiweek.val());
       var plotData = {};
+      var currTeams = [];
+      var currColors = [];
       for(var t = 0; t < teams.length; t++) {
-        plotData[teams[t]] = [];
-        for(var i = 0; i < FS_Data.epiweeks.length; i++) {
-          plotData[teams[t]].push(values[t][i]);
+        if(exclude_teams.indexOf(teams[t]) < 0) {
+          currTeams.push(teams[t]);
+          currColors.push(colors[t]);
+          plotData[teams[t]] = [];
+          for(var i = 0; i < FS_Data.epiweeks.length; i++) {
+            plotData[teams[t]].push(values[t][i]);
+          }
         }
       }
       if(epiweek.val() == 'combine') {
@@ -115,15 +170,40 @@
         wILI = FS_Data.wILI[region.val()];
       }
       plot.setWili(wILI);
-      plot.update(plotData);
+      plot.update(plotData, input, currTeams, currColors);
     }
     function onLoadSuccess(t, d) {
       teams = t;
       data = d;
+      for (var t = 0; t < teams.length; t++) {
+        colors.push(color_list[t % color_list.length]);
+      }
       $('#part0').hide(0);
       $('#part1').show(0, function() {
         plot = new FS_Plot($('#canvas'), teams);
         update();
+        plot_menu.hide();
+        plotmenu_button.val('\u00BB');
+        legendItems = [];
+        for (var t = 0; t < teams.length; t++) {
+          legend.append('<li style="color:#'+ colors[t].toString(16) + ';"><input type="checkbox" checked="checked" value="' + teams[t] + '">\u00A0' + teams[t] + '</input></li>');
+        }
+        $('#legend input[type=checkbox]').change(function() {
+          if($(this).prop('checked')) {
+            var index = exclude_teams.indexOf($(this).val());
+            if(index >= 0) {
+              exclude_teams.splice(index, 1);
+            }
+            else {
+              console.log('error element not in array');
+            }
+            update('teamToggle');
+          }
+          else {
+            exclude_teams.push($(this).val());
+            update('teamToggle');
+          }
+        });
       });
     }
     function onLoadError(message) {
@@ -132,11 +212,17 @@
     }
     $(document).ready(function() {
       $('#part1').hide(0);
-      error.change(update);
-      target.change(update);
-      region.change(update);
-      epiweek.change(update);
-      wiliCheckbox.click(update);
+      error.change(function () { update('normal');});
+      target.change(function () { update('normal');});
+      region.change(function () { update('normal');});
+      epiweek.change(function () { update('normal');});
+      wiliCheckbox.click(function () { update('normal');});
+      zoominButton.click(function () { update('zoomIn');});
+      zoomoutButton.click(function () { update('zoomOut');});
+      moveupButton.click(function () { update('moveUp');});
+      movedownButton.click(function () { update('moveDown');});
+      rescaleButton.click(function () { update('normal');});
+      legendCheckbox.click(function () { update('legendToggle');});
       loadButton.click(function() {
         loadButton.prop('disabled', true);
         FS_Data.init(parseInt($('#season_select').val()));
@@ -148,6 +234,17 @@
       });
       pointsCheckbox.click(function() {
         plot.setPointsVisible(pointsCheckbox.prop('checked'));
+      });
+      plotmenu_button.click(function() {
+        showPlotMenu = !showPlotMenu;
+        if(showPlotMenu) {
+          plot_menu.show(400);
+          plotmenu_button.val('\u00AB');
+        }
+        else {
+          plot_menu.hide(400);
+          plotmenu_button.val('\u00BB');
+        }
       });
       $(window).on('resize', function() {
         if(plot !== null) {
