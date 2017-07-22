@@ -10,7 +10,7 @@
   @targets = @targets_seasonal.concat(@targets_local)
   @targets_2015 = @targets_seasonal_2015.concat(@targets_local_2015)
   @errors = ['LS', 'AE']
-  @error_labels = ['log score', 'absolute error']
+  @error_labels = ['CDC log score 2016-2017', 'absolute error']
   @wILI = null
 
   @init = (season) ->

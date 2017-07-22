@@ -48,7 +48,7 @@
 
     FS_Data.errors = ['LS', 'AE'];
 
-    FS_Data.error_labels = ['log score', 'absolute error'];
+    FS_Data.error_labels = ['CDC log score 2016-2017', 'absolute error'];
 
     FS_Data.wILI = null;
 

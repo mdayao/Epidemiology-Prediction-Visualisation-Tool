@@ -109,6 +109,15 @@
             <ul id="legend">
             </ul>
           </div>
+          <div id="row">
+            <input id="select_all_button" type="button" value="Select All" style="width:80px;"></input>
+          </div>
+          <div id="row">
+            <input id="unselect_all_button" type="button" value="Unselect All" style="width:80px;"></input>
+          </div>
+          <div id="row">
+            <input id="recolor_button" type="button" value="Recolor" style="width:80px;"></input>
+          </div>
         </div>
         <div style="height:100%;width:auto;overflow:hidden">
           <canvas id="canvas" style="width:100%;height:100%;"></canvas>
@@ -140,6 +149,10 @@
     var movedownButton = $('#button_movedown');
     var rescaleButton = $('#button_rescale');
     var legend = $('#legend');
+    var teamCheckboxIds = [];
+    var selectAllButton = $('#select_all_button');
+    var unselectAllButton = $('#unselect_all_button');
+    var recolorButton = $('#recolor_button');
 
     function update(input) {
       if(data === null) {
@@ -228,6 +241,37 @@
         FS_Data.init(parseInt($('#season_select').val()));
         FS_Data.addAllOptions(error, target, region);
         FS_Data.loadFiles($('#files')[0].files, parseInt($('#season_select').val()), onLoadSuccess, onLoadError);
+      });
+      selectAllButton.click(function () { 
+        exclude_teams = [];
+        var checkboxes = document.querySelectorAll('#legend input[type=checkbox]');
+        for(var i = 0; i < checkboxes.length; i++) {
+          checkboxes[i].checked = true;
+        }
+        update('teamToggle');
+      });
+      unselectAllButton.click(function () {
+        for(var t = 0; t < teams.length; t++) {
+          if(exclude_teams.indexOf(teams[t]) < 0) {
+            exclude_teams.push(teams[t]);
+          }
+        }
+        var checkboxes = document.querySelectorAll('#legend input[type=checkbox]');
+        for(var i = 0; i < checkboxes.length; i++) {
+          checkboxes[i].checked = false;
+        }
+        update('teamToggle');
+      });
+      recolorButton.click(function () {
+        var max = 0xFFFFFF + 1;
+        for (var t = 0; t < teams.length; t++) {
+          colors[t] = Math.round(Math.random()*max) + 1;
+        }
+        listElements = document.querySelectorAll('#legend > li');
+        for(var i = 0; i < listElements.length; i++) {
+          listElements[i].style.color = "#" + colors[i].toString(16);
+        }
+        update('normal');
       });
       shakeButton.click(function() {
         plot.shakeItUp();
