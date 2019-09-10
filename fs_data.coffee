@@ -2,15 +2,19 @@
 
   @regions = ((if i == 0 then 'Nat' else "Reg#{i}") for i in [0..10])
   @regions_2015 = ((if i == 0 then 'us' else "region#{i}") for i in [0..10])
+  @regions_2018 = ((if i == 0 then 'US National' else "HHS Region #{i}") for i in [0..10])
   @hhsRegions = ((if i == 0 then 'nat' else "hhs#{i}") for i in [0..10])
   @targets_seasonal = ['onset', 'peakweek', 'peak']
   @targets_seasonal_2015 = ['onset', 'pkwk', 'pkper']
+  @targets_seasonal_2018 = ['Season onset', 'Season peak week', 'Season peak percentage']
   @targets_local = ['1_week', '2_week', '3_week', '4_week']
   @targets_local_2015 = ['1wk', '2wk', '3wk', '4wk']
+  @targets_local_2018 = ['1 wk ahead', '2 wk ahead', '3 wk ahead', '4 wk ahead']
   @targets = @targets_seasonal.concat(@targets_local)
   @targets_2015 = @targets_seasonal_2015.concat(@targets_local_2015)
+  @targets_2018 = @targets_seasonal_2018.concat(@targets_local_2018)
   @errors = ['LS', 'AE']
-  @error_labels = ['CDC log score 2016-2017', 'absolute error']
+  @error_labels = ['CDC log score', 'absolute error']
   @wILI = null
 
   @init = (season) ->
@@ -22,6 +26,8 @@
       @epiweeks = (('' + if i <= 12 then 201540 + i else 201600 + i - 12) for i in [2..30])
     else if season == 20160
       @epiweeks = (('' + if i <= 12 then 201640 + i else 201700 + i - 12) for i in [3..30])
+    else if season == 20180
+      @epiweeks = (('' + if i <= 12 then 201840 + i else 201900 + i - 12) for i in [2..30])
     else
       throw new Error('unsupported season: ' + season)
     getCallback = (hhs, name) =>
@@ -54,6 +60,9 @@
     if season in [20150, 20160]
       targets = (@targets_2015[@targets.indexOf(t)] for t in targets)
       regions = (@regions_2015[@regions.indexOf(r)] for r in regions)
+    if season in [20180]
+      targets = (@targets_2018[@targets.indexOf(t)] for t in targets)
+      regions = (@regions_2018[@regions.indexOf(r)] for r in regions)
     nr = regions.length
     nt = targets.length
     teams = (t for t of data)
@@ -106,12 +115,18 @@
     for file in files
       if season in [2014, 2015] and !file.name.endsWith('.zip')
         return onFailure("#{file.name} is not a zip file")
-      else if season in [20150, 20160] and !file.name.endsWith('.csv')
+      else if season in [20150, 20160, 20180] and !file.name.endsWith('.csv')
         return onFailure("#{file.name} is not a csv file")
     # load files one after another
     fileIndex = 0
     data = {}
-    loadFunc = if season in [20150, 20160] then loadFull else loadSingle
+    # loadFunc = if season in [20150, 20160] then loadFull else loadSingle
+    if season in [20150, 20160]
+      loadFunc = loadFull
+    else if season in [20180]
+      loadFunc = loadFull2018
+    else
+      loadFunc = loadSingle
     callback = (name, fileData, error) ->
       if error?
         return onFailure(error)
@@ -174,6 +189,23 @@
         for region in FS_Data.regions_2015
           data[region] = {}
           for target in FS_Data.targets_2015
+            values = parseFullCSV(csv, region, target)
+            unpackValues(data[region], values, [target])
+      catch ex
+        error = ex.message ? '' + ex
+      callback(file.name, data, error)
+    reader.readAsText(file)
+
+    loadFull2018 = (file, callback) ->
+    reader = new FileReader()
+    reader.onload = (event) ->
+      data = {}
+      error = null
+      csv = event.target.result
+      try
+        for region in FS_Data.regions_2018
+          data[region] = {}
+          for target in FS_Data.targets_2018
             values = parseFullCSV(csv, region, target)
             unpackValues(data[region], values, [target])
       catch ex
