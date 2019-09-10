@@ -25,6 +25,15 @@
       return results1;
     })();
 
+    FS_Data.regions_2018 = (function() {
+      var j, results1;
+      results1 = [];
+      for (i = j = 0; j <= 10; i = ++j) {
+        results1.push(i === 0 ? 'US National' : "HHS Region " + i);
+      }
+      return results1;
+    })();
+
     FS_Data.hhsRegions = (function() {
       var j, results1;
       results1 = [];
@@ -38,17 +47,23 @@
 
     FS_Data.targets_seasonal_2015 = ['onset', 'pkwk', 'pkper'];
 
+    FS_data.targets_seasonal_2018 = ['Season onset', 'Season peak week', 'Season peak percentage']
+
     FS_Data.targets_local = ['1_week', '2_week', '3_week', '4_week'];
 
     FS_Data.targets_local_2015 = ['1wk', '2wk', '3wk', '4wk'];
 
+    FS_data.targets_local_2018 = ['1 wk ahead', '2 wk ahead', '3 wk ahead', '4 wk ahead']
+    
     FS_Data.targets = FS_Data.targets_seasonal.concat(FS_Data.targets_local);
 
     FS_Data.targets_2015 = FS_Data.targets_seasonal_2015.concat(FS_Data.targets_local_2015);
+    
+    FS_Data.targets_2018 = FS_Data.targets_seasonal_2018.concat(FS_Data.targets_local_2018);
 
     FS_Data.errors = ['LS', 'AE'];
 
-    FS_Data.error_labels = ['CDC log score 2016-2017', 'absolute error'];
+    FS_Data.error_labels = ['CDC log score', 'absolute error'];
 
     FS_Data.wILI = null;
 
@@ -81,6 +96,15 @@
           results1 = [];
           for (i = j = 3; j <= 30; i = ++j) {
             results1.push('' + (i <= 12 ? 201640 + i : 201700 + i - 12));
+          }
+          return results1;
+        })();
+      } else if (season === 20180) {
+        this.epiweeks = (function() {
+          var j, results1;
+          results1 = [];
+          for (i = j = 2; j <= 30; i = ++j) {
+            results1.push('' + (i <= 12 ? 201840 + i : 201900 + i - 12));
           }
           return results1;
         })();
@@ -280,13 +304,22 @@
         file = files[j];
         if ((season === 2014 || season === 2015) && !file.name.endsWith('.zip')) {
           return onFailure(file.name + " is not a zip file");
-        } else if ((season === 20150 || season === 20160) && !file.name.endsWith('.csv')) {
+        } else if ((season === 20150 || season === 20160 || season === 20180) && !file.name.endsWith('.csv')) {
           return onFailure(file.name + " is not a csv file");
         }
       }
       fileIndex = 0;
       data = {};
-      loadFunc = season === 20150 || season === 20160 ? loadFull : loadSingle;
+      // loadFunc = season === 20150 || season === 20160 ? loadFull : loadSingle;
+      if (season === 20150 || season === 20160) {
+        loadFunc = loadFull;
+      }
+      else if (season === 20180) {
+        loadFunc = loadFull2018;
+      }
+      else {
+        loadFunc = LoadSingle;
+      }
       callback = function(name, fileData, error) {
         var t;
         if (error != null) {
@@ -418,6 +451,35 @@
             region = ref[j];
             data[region] = {};
             ref1 = FS_Data.targets_2015;
+            for (k = 0, len1 = ref1.length; k < len1; k++) {
+              target = ref1[k];
+              values = parseFullCSV(csv, region, target);
+              unpackValues(data[region], values, [target]);
+            }
+          }
+        } catch (error1) {
+          ex = error1;
+          error = (ref2 = ex.message) != null ? ref2 : '' + ex;
+        }
+        return callback(file.name, data, error);
+      };
+      return reader.readAsText(file);
+    };
+
+    loadFull2018 = function(file, callback) {
+      var reader;
+      reader = new FileReader();
+      reader.onload = function(event) {
+        var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
+        data = {};
+        error = null;
+        csv = event.target.result;
+        try {
+          ref = FS_Data.regions_2018;
+          for (j = 0, len = ref.length; j < len; j++) {
+            region = ref[j];
+            data[region] = {};
+            ref1 = FS_Data.targets_2018;
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               target = ref1[k];
               values = parseFullCSV(csv, region, target);
