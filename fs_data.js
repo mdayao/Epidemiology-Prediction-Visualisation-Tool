@@ -192,6 +192,26 @@
           return results1;
         }).call(this);
       }
+      if (season === 20180) {
+        targets = (function() {
+          var j, len, results1;
+          results1 = [];
+          for (j = 0, len = targets.length; j < len; j++) {
+            t = targets[j];
+            results1.push(this.targets_2018[this.targets.indexOf(t)]);
+          }
+          return results1;
+        }).call(this);
+        regions = (function() {
+          var j, len, results1;
+          results1 = [];
+          for (j = 0, len = regions.length; j < len; j++) {
+            r = regions[j];
+            results1.push(this.regions_2018[this.regions.indexOf(r)]);
+          }
+          return results1;
+        }).call(this);
+      }
       nr = regions.length;
       nt = targets.length;
       teams = (function() {
