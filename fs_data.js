@@ -47,18 +47,18 @@
 
     FS_Data.targets_seasonal_2015 = ['onset', 'pkwk', 'pkper'];
 
-    FS_data.targets_seasonal_2018 = ['Season onset', 'Season peak week', 'Season peak percentage']
+    FS_Data.targets_seasonal_2018 = ['Season onset', 'Season peak week', 'Season peak percentage'];
 
     FS_Data.targets_local = ['1_week', '2_week', '3_week', '4_week'];
 
     FS_Data.targets_local_2015 = ['1wk', '2wk', '3wk', '4wk'];
 
-    FS_data.targets_local_2018 = ['1 wk ahead', '2 wk ahead', '3 wk ahead', '4 wk ahead']
-    
+    FS_Data.targets_local_2018 = ['1 wk ahead', '2 wk ahead', '3 wk ahead', '4 wk ahead'];
+
     FS_Data.targets = FS_Data.targets_seasonal.concat(FS_Data.targets_local);
 
     FS_Data.targets_2015 = FS_Data.targets_seasonal_2015.concat(FS_Data.targets_local_2015);
-    
+
     FS_Data.targets_2018 = FS_Data.targets_seasonal_2018.concat(FS_Data.targets_local_2018);
 
     FS_Data.errors = ['LS', 'AE'];
@@ -330,15 +330,12 @@
       }
       fileIndex = 0;
       data = {};
-      // loadFunc = season === 20150 || season === 20160 ? loadFull : loadSingle;
       if (season === 20150 || season === 20160) {
         loadFunc = loadFull;
-      }
-      else if (season === 20180) {
+      } else if (season === 20180) {
         loadFunc = loadFull2018;
-      }
-      else {
-        loadFunc = LoadSingle;
+      } else {
+        loadFunc = loadSingle;
       }
       callback = function(name, fileData, error) {
         var t;
@@ -458,7 +455,7 @@
     };
 
     loadFull = function(file, callback) {
-      var reader;
+      var loadFull2018, reader;
       reader = new FileReader();
       reader.onload = function(event) {
         var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
@@ -483,11 +480,8 @@
         }
         return callback(file.name, data, error);
       };
-      return reader.readAsText(file);
-    };
-
-    loadFull2018 = function(file, callback) {
-      var reader;
+      reader.readAsText(file);
+      loadFull2018 = function(file, callback) {};
       reader = new FileReader();
       reader.onload = function(event) {
         var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
