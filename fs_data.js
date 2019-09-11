@@ -3,7 +3,7 @@
   var FS_Data;
 
   (typeof exports !== "undefined" && exports !== null ? exports : window).FS_Data = FS_Data = (function() {
-    var addOptions, getValues, i, loadFull, loadSingle, parseCSV, parseFullCSV, transpose, unpackValues;
+    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, reader, transpose, unpackValues;
 
     function FS_Data() {}
 
@@ -191,8 +191,7 @@
           }
           return results1;
         }).call(this);
-      }
-      if (season === 20180) {
+      } else if (season === 20180) {
         targets = (function() {
           var j, len, results1;
           results1 = [];
@@ -455,7 +454,7 @@
     };
 
     loadFull = function(file, callback) {
-      var loadFull2018, reader;
+      var reader;
       reader = new FileReader();
       reader.onload = function(event) {
         var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
@@ -480,34 +479,38 @@
         }
         return callback(file.name, data, error);
       };
-      reader.readAsText(file);
-      loadFull2018 = function(file, callback) {};
-      reader = new FileReader();
-      reader.onload = function(event) {
-        var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
-        data = {};
-        error = null;
-        csv = event.target.result;
-        try {
-          ref = FS_Data.regions_2018;
-          for (j = 0, len = ref.length; j < len; j++) {
-            region = ref[j];
-            data[region] = {};
-            ref1 = FS_Data.targets_2018;
-            for (k = 0, len1 = ref1.length; k < len1; k++) {
-              target = ref1[k];
-              values = parseFullCSV(csv, region, target);
-              unpackValues(data[region], values, [target]);
-            }
-          }
-        } catch (error1) {
-          ex = error1;
-          error = (ref2 = ex.message) != null ? ref2 : '' + ex;
-        }
-        return callback(file.name, data, error);
-      };
       return reader.readAsText(file);
     };
+
+    loadFull2018 = function(file, callback) {};
+
+    reader = new FileReader();
+
+    reader.onload = function(event) {
+      var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
+      data = {};
+      error = null;
+      csv = event.target.result;
+      try {
+        ref = FS_Data.regions_2018;
+        for (j = 0, len = ref.length; j < len; j++) {
+          region = ref[j];
+          data[region] = {};
+          ref1 = FS_Data.targets_2018;
+          for (k = 0, len1 = ref1.length; k < len1; k++) {
+            target = ref1[k];
+            values = parseFullCSV(csv, region, target);
+            unpackValues(data[region], values, [target]);
+          }
+        }
+      } catch (error1) {
+        ex = error1;
+        error = (ref2 = ex.message) != null ? ref2 : '' + ex;
+      }
+      return callback(file.name, data, error);
+    };
+
+    reader.readAsText(file);
 
     parseFullCSV = function(csv, l, t) {
       var AEresults, ae, fix, j, k, len, location, ls, ref, ref1, results, row, target;

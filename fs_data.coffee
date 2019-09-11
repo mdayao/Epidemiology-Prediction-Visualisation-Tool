@@ -60,7 +60,7 @@
     if season in [20150, 20160]
       targets = (@targets_2015[@targets.indexOf(t)] for t in targets)
       regions = (@regions_2015[@regions.indexOf(r)] for r in regions)
-    if season in [20180]
+    else if season in [20180]
       targets = (@targets_2018[@targets.indexOf(t)] for t in targets)
       regions = (@regions_2018[@regions.indexOf(r)] for r in regions)
     nr = regions.length
@@ -196,22 +196,22 @@
       callback(file.name, data, error)
     reader.readAsText(file)
 
-    loadFull2018 = (file, callback) ->
-    reader = new FileReader()
-    reader.onload = (event) ->
-      data = {}
-      error = null
-      csv = event.target.result
-      try
-        for region in FS_Data.regions_2018
-          data[region] = {}
-          for target in FS_Data.targets_2018
-            values = parseFullCSV(csv, region, target)
-            unpackValues(data[region], values, [target])
-      catch ex
-        error = ex.message ? '' + ex
-      callback(file.name, data, error)
-    reader.readAsText(file)
+  loadFull2018 = (file, callback) ->
+  reader = new FileReader()
+  reader.onload = (event) ->
+    data = {}
+    error = null
+    csv = event.target.result
+    try
+      for region in FS_Data.regions_2018
+        data[region] = {}
+        for target in FS_Data.targets_2018
+          values = parseFullCSV(csv, region, target)
+          unpackValues(data[region], values, [target])
+    catch ex
+      error = ex.message ? '' + ex
+    callback(file.name, data, error)
+  reader.readAsText(file)
 
   parseFullCSV = (csv, l, t) ->
     fix = (n) -> if Number.isNaN(n) then -10 else n
