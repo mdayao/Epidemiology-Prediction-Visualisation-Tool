@@ -3,7 +3,7 @@
   var FS_Data;
 
   (typeof exports !== "undefined" && exports !== null ? exports : window).FS_Data = FS_Data = (function() {
-    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, transpose, unpackValues;
+    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, parseFullCSV2018, transpose, unpackValues;
 
     function FS_Data() {}
 
@@ -498,7 +498,7 @@
             ref1 = FS_Data.targets_2018;
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               target = ref1[k];
-              values = parseFullCSV(csv, region, target);
+              values = parseFullCSV2018(csv, region, target);
               unpackValues(data[region], values, [target]);
             }
           }
@@ -532,6 +532,45 @@
         location = row[1];
         target = row[2];
         ls = row[7];
+        if (location === l && target === t) {
+          results.push(fix(parseFloat(ls)));
+          if (row.length === 9) {
+            ae = row[8];
+            AEresults.push(fix(parseFloat(ae)));
+          }
+        }
+      }
+      if (AEresults.length === 0) {
+        for (i = k = 0, ref1 = results.length; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
+          results.push(0);
+        }
+      } else {
+        results = results.concat(AEresults);
+      }
+      return results;
+    };
+
+    parseFullCSV2018 = function(csv, l, t) {
+      var AEresults, ae, fix, j, k, len, location, ls, ref, ref1, results, row, target;
+      fix = function(n) {
+        if (Number.isNaN(n)) {
+          return -10;
+        } else {
+          return n;
+        }
+      };
+      results = [];
+      AEresults = [];
+      ref = csv.split('\n').slice(1);
+      for (j = 0, len = ref.length; j < len; j++) {
+        row = ref[j];
+        row = row.split(',');
+        if (row.length === 0) {
+          continue;
+        }
+        location = row[0];
+        target = row[1];
+        ls = row[2];
         if (location === l && target === t) {
           results.push(fix(parseFloat(ls)));
           if (row.length === 9) {
