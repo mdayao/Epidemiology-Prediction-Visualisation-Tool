@@ -197,21 +197,21 @@
     reader.readAsText(file)
 
   loadFull2018 = (file, callback) ->
-  reader = new FileReader()
-  reader.onload = (event) ->
-    data = {}
-    error = null
-    csv = event.target.result
-    try
-      for region in FS_Data.regions_2018
-        data[region] = {}
-        for target in FS_Data.targets_2018
-          values = parseFullCSV(csv, region, target)
-          unpackValues(data[region], values, [target])
-    catch ex
-      error = ex.message ? '' + ex
-    callback(file.name, data, error)
-  reader.readAsText(file)
+    reader = new FileReader()
+    reader.onload = (event) ->
+      data = {}
+      error = null
+      csv = event.target.result
+      try
+        for region in FS_Data.regions_2018
+          data[region] = {}
+          for target in FS_Data.targets_2018
+            values = parseFullCSV(csv, region, target)
+            unpackValues(data[region], values, [target])
+      catch ex
+        error = ex.message ? '' + ex
+      callback(file.name, data, error)
+    reader.readAsText(file)
 
   parseFullCSV = (csv, l, t) ->
     fix = (n) -> if Number.isNaN(n) then -10 else n
