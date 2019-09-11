@@ -206,7 +206,7 @@
         for region in FS_Data.regions_2018
           data[region] = {}
           for target in FS_Data.targets_2018
-            values = parseFullCSV(csv, region, target)
+            values = parseFullCSV2018(csv, region, target)
             unpackValues(data[region], values, [target])
       catch ex
         error = ex.message ? '' + ex
@@ -224,6 +224,30 @@
       location = row[1]
       target = row[2]
       ls = row[7]
+      if location == l and target == t
+        results.push(fix(parseFloat(ls)))
+        if row.length == 9
+          ae = row[8]
+          AEresults.push(fix(parseFloat(ae)))
+    if AEresults.length == 0
+      # pad the abs err scores with 0s. to change when AE scores are available
+      for i in [0...results.length]
+        results.push(0)
+    else
+      results = results.concat(AEresults)
+    return results
+
+  parseFullCSV2018 = (csv, l, t) ->
+    fix = (n) -> if Number.isNaN(n) then -10 else n
+    results = []
+    AEresults = []
+    for row in csv.split('\n').slice(1)
+      row = row.split(',')
+      if row.length == 0
+        continue
+      location = row[0]
+      target = row[1]
+      ls = row[2]
       if location == l and target == t
         results.push(fix(parseFloat(ls)))
         if row.length == 9
