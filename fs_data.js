@@ -3,7 +3,7 @@
   var FS_Data;
 
   (typeof exports !== "undefined" && exports !== null ? exports : window).FS_Data = FS_Data = (function() {
-    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, parseFullCSV2018, transpose, unpackValues;
+    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, parseFullCSV2018, transpose, unpackValues, unpackValues2018;
 
     function FS_Data() {}
 
@@ -29,7 +29,7 @@
       var j, results1;
       results1 = [];
       for (i = j = 0; j <= 10; i = ++j) {
-        results1.push(i === 0 ? 'US National' : "HHS Region " + i);
+        results1.push(i === 0 ? "US National" : "HHS Region " + i);
       }
       return results1;
     })();
@@ -416,6 +416,27 @@
       return results1;
     };
 
+    unpackValues2018 = function(data, values, targets) {
+      var ew, j, len, results1, target;
+      i = 0;
+      results1 = [];
+      for (j = 0, len = targets.length; j < len; j++) {
+        target = targets[j];
+        data[target] = {};
+        results1.push((function() {
+          var k, len1, ref, results2;
+          ref = FS_Data.epiweeks;
+          results2 = [];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            ew = ref[k];
+            results2.push(data[target][ew] = values[i++]);
+          }
+          return results2;
+        })());
+      }
+      return results1;
+    };
+
     getValues = function(filename, zip, region, target) {
       var entry, pattern, regex, text;
       pattern = "^" + region + target + "_Team.*\\.csv$";
@@ -486,7 +507,7 @@
       var reader;
       reader = new FileReader();
       reader.onload = function(event) {
-        var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, target, values;
+        var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, results, target, values;
         data = {};
         error = null;
         csv = event.target.result;
@@ -498,7 +519,15 @@
             ref1 = FS_Data.targets_2018;
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               target = ref1[k];
-              values = parseFullCSV2018(csv, region, target);
+              results = (function() {
+                var m, ref2, results1;
+                results1 = [];
+                for (m = 0, ref2 = FS_Data.epiweeks.length; 0 <= ref2 ? m < ref2 : m > ref2; 0 <= ref2 ? m++ : m--) {
+                  results1.push(0);
+                }
+                return results1;
+              })();
+              values = parseFullCSV2018(csv, region, target, results);
               unpackValues(data[region], values, [target]);
             }
           }
@@ -550,8 +579,8 @@
       return results;
     };
 
-    parseFullCSV2018 = function(csv, l, t) {
-      var AEresults, ae, fix, j, k, len, location, ls, ref, ref1, results, row, target;
+    parseFullCSV2018 = function(csv, l, t, results) {
+      var AEresults, comp_week, fix, j, k, len, location, ls, ref, ref1, row, target;
       fix = function(n) {
         if (Number.isNaN(n)) {
           return -10;
@@ -559,7 +588,6 @@
           return n;
         }
       };
-      results = [];
       AEresults = [];
       ref = csv.split('\n').slice(1);
       for (j = 0, len = ref.length; j < len; j++) {
@@ -571,12 +599,9 @@
         location = row[0];
         target = row[1];
         ls = row[2];
-        if (location === l && target === t) {
-          results.push(fix(parseFloat(ls)));
-          if (row.length === 9) {
-            ae = row[8];
-            AEresults.push(fix(parseFloat(ae)));
-          }
+        comp_week = row[5];
+        if (location.includes(l) && target.includes(t)) {
+          results[comp_week - 1] = fix(parseFloat(ls));
         }
       }
       if (AEresults.length === 0) {
