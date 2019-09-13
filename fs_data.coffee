@@ -2,13 +2,16 @@
 
   @regions = ((if i == 0 then 'Nat' else "Reg#{i}") for i in [0..10])
   @regions_2015 = ((if i == 0 then 'us' else "region#{i}") for i in [0..10])
-  @regions_2018 = ((if i == 0 then 'US National' else "HHS Region #{i}") for i in [0..10])
+  # @regions_2018 = ((if i == 0 then "\"US National\"" else "\"HHS Region #{i}\"") for i in [0..10])
+  @regions_2018 = ((if i == 0 then "US National" else "HHS Region #{i}") for i in [0..10])
   @hhsRegions = ((if i == 0 then 'nat' else "hhs#{i}") for i in [0..10])
   @targets_seasonal = ['onset', 'peakweek', 'peak']
   @targets_seasonal_2015 = ['onset', 'pkwk', 'pkper']
+  # @targets_seasonal_2018 = ['"Season onset"', '"Season peak week"', '"Season peak percentage"']
   @targets_seasonal_2018 = ['Season onset', 'Season peak week', 'Season peak percentage']
   @targets_local = ['1_week', '2_week', '3_week', '4_week']
   @targets_local_2015 = ['1wk', '2wk', '3wk', '4wk']
+  # @targets_local_2018 = ['"1 wk ahead"', '"2 wk ahead"', '"3 wk ahead"', '"4 wk ahead"']
   @targets_local_2018 = ['1 wk ahead', '2 wk ahead', '3 wk ahead', '4 wk ahead']
   @targets = @targets_seasonal.concat(@targets_local)
   @targets_2015 = @targets_seasonal_2015.concat(@targets_local_2015)
@@ -163,6 +166,13 @@
         data[target][err] = {}
         for ew in FS_Data.epiweeks
           data[target][err][ew] = values[i++]
+  
+  unpackValues2018 = (data, values, targets) ->
+    i = 0
+    for target in targets
+      data[target] = {}
+      for ew in FS_Data.epiweeks
+        data[target][ew] = values[i++]
 
   getValues = (filename, zip, region, target) ->
     pattern = "^#{region}#{target}_Team.*\\.csv$"
@@ -206,7 +216,8 @@
         for region in FS_Data.regions_2018
           data[region] = {}
           for target in FS_Data.targets_2018
-            values = parseFullCSV2018(csv, region, target)
+            results = (0 for [0...FS_Data.epiweeks.length])
+            values = parseFullCSV2018(csv, region, target, results)
             unpackValues(data[region], values, [target])
       catch ex
         error = ex.message ? '' + ex
@@ -237,9 +248,9 @@
       results = results.concat(AEresults)
     return results
 
-  parseFullCSV2018 = (csv, l, t) ->
+  parseFullCSV2018 = (csv, l, t, results) ->
     fix = (n) -> if Number.isNaN(n) then -10 else n
-    results = []
+    # results = []
     AEresults = []
     for row in csv.split('\n').slice(1)
       row = row.split(',')
@@ -248,11 +259,11 @@
       location = row[0]
       target = row[1]
       ls = row[2]
-      if location == l and target == t
-        results.push(fix(parseFloat(ls)))
-        if row.length == 9
-          ae = row[8]
-          AEresults.push(fix(parseFloat(ae)))
+      comp_week = row[5]
+      # if location == l and target == t
+      if location.includes(l) and target.includes(t)
+        results[comp_week-1] = fix(parseFloat(ls))
+        # results.push(fix(parseFloat(ls)))
     if AEresults.length == 0
       # pad the abs err scores with 0s. to change when AE scores are available
       for i in [0...results.length]
