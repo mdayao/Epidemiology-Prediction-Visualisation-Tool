@@ -3,7 +3,7 @@
   var FS_Data;
 
   (typeof exports !== "undefined" && exports !== null ? exports : window).FS_Data = FS_Data = (function() {
-    var addOptions, getValues, i, loadFull, loadFull2018, loadSingle, parseCSV, parseFullCSV, parseFullCSV2018, transpose, unpackValues, unpackValues2018;
+    var addOptions, getValues, i, loadFull, loadFull2017, loadFull2018, loadSingle, parseCSV, parseFullCSV, parseFullCSV2017, parseFullCSV2018, transpose, unpackValues;
 
     function FS_Data() {}
 
@@ -99,6 +99,15 @@
           }
           return results1;
         })();
+      } else if (season === 20170) {
+        this.epiweeks = (function() {
+          var j, results1;
+          results1 = [];
+          for (i = j = 3; j <= 30; i = ++j) {
+            results1.push('' + (i <= 12 ? 201740 + i : 201800 + i - 12));
+          }
+          return results1;
+        })();
       } else if (season === 20180) {
         this.epiweeks = (function() {
           var j, results1;
@@ -191,7 +200,7 @@
           }
           return results1;
         }).call(this);
-      } else if (season === 20180) {
+      } else if (season === 20170 || season === 20180) {
         targets = (function() {
           var j, len, results1;
           results1 = [];
@@ -323,7 +332,7 @@
         file = files[j];
         if ((season === 2014 || season === 2015) && !file.name.endsWith('.zip')) {
           return onFailure(file.name + " is not a zip file");
-        } else if ((season === 20150 || season === 20160 || season === 20180) && !file.name.endsWith('.csv')) {
+        } else if ((season === 20150 || season === 20160 || season === 20170 || season === 20180) && !file.name.endsWith('.csv')) {
           return onFailure(file.name + " is not a csv file");
         }
       }
@@ -331,6 +340,8 @@
       data = {};
       if (season === 20150 || season === 20160) {
         loadFunc = loadFull;
+      } else if (season === 20170) {
+        loadFunc = loadFull2017;
       } else if (season === 20180) {
         loadFunc = loadFull2018;
       } else {
@@ -416,27 +427,6 @@
       return results1;
     };
 
-    unpackValues2018 = function(data, values, targets) {
-      var ew, j, len, results1, target;
-      i = 0;
-      results1 = [];
-      for (j = 0, len = targets.length; j < len; j++) {
-        target = targets[j];
-        data[target] = {};
-        results1.push((function() {
-          var k, len1, ref, results2;
-          ref = FS_Data.epiweeks;
-          results2 = [];
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            ew = ref[k];
-            results2.push(data[target][ew] = values[i++]);
-          }
-          return results2;
-        })());
-      }
-      return results1;
-    };
-
     getValues = function(filename, zip, region, target) {
       var entry, pattern, regex, text;
       pattern = "^" + region + target + "_Team.*\\.csv$";
@@ -491,6 +481,43 @@
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               target = ref1[k];
               values = parseFullCSV(csv, region, target);
+              unpackValues(data[region], values, [target]);
+            }
+          }
+        } catch (error1) {
+          ex = error1;
+          error = (ref2 = ex.message) != null ? ref2 : '' + ex;
+        }
+        return callback(file.name, data, error);
+      };
+      return reader.readAsText(file);
+    };
+
+    loadFull2017 = function(file, callback) {
+      var reader;
+      reader = new FileReader();
+      reader.onload = function(event) {
+        var csv, data, error, ex, j, k, len, len1, ref, ref1, ref2, region, results, target, values;
+        data = {};
+        error = null;
+        csv = event.target.result;
+        try {
+          ref = FS_Data.regions_2018;
+          for (j = 0, len = ref.length; j < len; j++) {
+            region = ref[j];
+            data[region] = {};
+            ref1 = FS_Data.targets_2018;
+            for (k = 0, len1 = ref1.length; k < len1; k++) {
+              target = ref1[k];
+              results = (function() {
+                var m, ref2, results1;
+                results1 = [];
+                for (m = 0, ref2 = FS_Data.epiweeks.length; 0 <= ref2 ? m < ref2 : m > ref2; 0 <= ref2 ? m++ : m--) {
+                  results1.push(0);
+                }
+                return results1;
+              })();
+              values = parseFullCSV2017(csv, region, target, results);
               unpackValues(data[region], values, [target]);
             }
           }
@@ -579,8 +606,8 @@
       return results;
     };
 
-    parseFullCSV2018 = function(csv, l, t, results) {
-      var AEresults, comp_week, fix, j, k, len, location, ls, ref, ref1, row, target;
+    parseFullCSV2017 = function(csv, l, t, results) {
+      var AEresults, comp_week, fix, forecast_week, j, k, len, location, ls, ref, ref1, row, target;
       fix = function(n) {
         if (Number.isNaN(n)) {
           return -10;
@@ -599,7 +626,46 @@
         location = row[0];
         target = row[1];
         ls = row[2];
-        comp_week = row[5];
+        forecast_week = parseInt(row[3]);
+        if (forecast_week < 20) {
+          forecast_week = forecast_week + 52;
+        }
+        comp_week = forecast_week - 43;
+        if (location.includes(l) && target.includes(t)) {
+          results[comp_week - 1] = fix(parseFloat(ls));
+        }
+      }
+      if (AEresults.length === 0) {
+        for (i = k = 0, ref1 = results.length; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
+          results.push(0);
+        }
+      } else {
+        results = results.concat(AEresults);
+      }
+      return results;
+    };
+
+    parseFullCSV2018 = function(csv, l, t, results) {
+      var AEresults, comp_week, fix, j, k, len, location, ls, ref, ref1, row, target;
+      fix = function(n) {
+        if (Number.isNaN(n)) {
+          return -10;
+        } else {
+          return n;
+        }
+      };
+      AEresults = [];
+      ref = csv.split('\n').slice(1);
+      for (j = 0, len = ref.length; j < len; j++) {
+        row = ref[j];
+        row = row.split(',');
+        if (row.length < 2) {
+          continue;
+        }
+        location = row[2];
+        target = row[3];
+        ls = row[6];
+        comp_week = row[7];
         if (location.includes(l) && target.includes(t)) {
           results[comp_week - 1] = fix(parseFloat(ls));
         }
